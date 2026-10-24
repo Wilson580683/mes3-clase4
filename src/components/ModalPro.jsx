@@ -15,7 +15,7 @@ const ModalPro = ({ item, onClose }) => {
   if (!item) return null;
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-6 animate-in fade-in duration-200">
+    <div className="fixed inset-0 z-100 flex items-center justify-center p-4 sm:p-6 animate-in fade-in duration-200">
       {/* 1. Backdrop oscuro desenfocado: al hacer clic afuera, se cierra */}
       <div
         className="absolute inset-0 bg-slate-950/80 backdrop-blur-sm transition-opacity"

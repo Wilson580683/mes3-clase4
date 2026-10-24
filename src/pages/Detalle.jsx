@@ -4,9 +4,12 @@ import { useParams, Link } from 'react-router-dom';
 // 🌐 1. Endpoint base declarado arriba y fuera del componente
 const API = 'https://dummyjson.com/products/';
 
+import { useCarrito } from '../context/CarritoContext';
+
 const Detalle = () => {
     // 1. Capturamos el parámetro dinámico definido en la ruta: <Route path="/detalle/:id" />
     const { id } = useParams();
+    const { calcularPrecio, formatearBs, agregarAlCarrito } = useCarrito();
 
     // 2. La Tríada Asíncrona de Estados
     const [producto, setProducto] = useState(null);
@@ -15,6 +18,8 @@ const Detalle = () => {
 
     // 3. Estado local para la miniatura activa en la galería
     const [fotoActiva, setFotoActiva] = useState(null);
+    // Estado local para el feedback del botón.
+    const [agregado, setAgregado] = useState(false);
 
     // 4. useEffect con dependencia [id]: si el usuario pasa al producto 5 y luego al 8, se refresca
     useEffect(() => {
@@ -77,7 +82,16 @@ const Detalle = () => {
             </div>
         );
     }
-    
+
+    const precioFinal = calcularPrecio(producto);
+    const tieneDescuento = Number(producto.discountPercentage) > 0;
+    const agotado = Number(producto.stock) <= 0;
+
+    const handleAgregar = () => {
+        agregarAlCarrito(producto);
+        setAgregado(true);
+        setTimeout(() => setAgregado(false), 1200);
+    };
 
     // Bolivares
 
@@ -114,7 +128,7 @@ const Detalle = () => {
                                         key={idx}
                                         type="button"
                                         onClick={() => setFotoActiva(img)}
-                                        className={`w-16 h-16 rounded-xl border-2 overflow-hidden flex-shrink-0 transition-all bg-slate-950 p-1 ${fotoActiva === img ? 'border-emerald-500 scale-105 shadow-md' : 'border-slate-800 hover:border-slate-600 opacity-60 hover:opacity-100'
+                                        className={`w-16 h-16 rounded-xl border-2 overflow-hidden shrink-0 transition-all bg-slate-950 p-1 ${fotoActiva === img ? 'border-emerald-500 scale-105 shadow-md' : 'border-slate-800 hover:border-slate-600 opacity-60 hover:opacity-100'
                                             }`}
                                     >
                                         <img src={img} alt="" className="w-full h-full object-contain" />
@@ -170,52 +184,76 @@ const Detalle = () => {
 
                         {/* Caja de Precio y Botón de Compra */}
                         <div className="p-6 bg-slate-950 border border-slate-800 rounded-2xl flex flex-col sm:flex-row items-center justify-between gap-4 mt-6">
-                            <div>
-                                <span className="text-xs text-slate-400 block font-medium">Precio Oficial</span>
-                                <span className="text-4xl font-black text-white">$ {Number(producto.price).toLocaleString('es-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
-                                <span className="text-xs text-slate-400 block font-medium">Precio Bs</span>
-                                <span className="text-xs font-black text-white">Bs {(producto.price * tasa).toLocaleString('es-VE', {minimumFractionDigits: 2, maximumFractionDigits: 2} )}</span>
 
+                            <div>
+                                <span className="text-xs text-slate-400 block font-medium">
+                                    Precio Final
+                                </span>
+
+                                <span className="text-4xl font-black text-white">
+                                    {'$ ' + Number(precioFinal).toFixed(2)}
+                                </span>
+
+                                {tieneDescuento && (
+                                    <span className="block text-xs text-slate-500 line-through">
+                                        {'$ ' + Number(producto.price).toFixed(2)}
+                                    </span>
+                                )}
+
+                                {tieneDescuento && (
+                                    <span className="inline-block mt-1 text-[10px] font-black text-rose-300 bg-rose-500/10 border border-rose-500/30 px-1.5 py-0.5 rounded">
+                                        -{Math.round(Number(producto.discountPercentage))}%
+                                    </span>
+                                )}
+
+                                <span className="block text-sm font-bold text-cyan-300 mt-1">
+                                    {formatearBs(precioFinal)}
+                                </span>
                             </div>
+
+                            {/* // =====================================================================
+// PASO 5: reemplaza el botón que solo hacía alert.
+// ===================================================================== */}
 
                             <button
                                 type="button"
-                                onClick={() => alert(`¡Compraste ${producto.title}!`)}
-                                className="w-full sm:w-auto px-8 py-3.5 bg-emerald-600 hover:bg-emerald-500 active:scale-95 text-white font-bold rounded-xl text-sm shadow-xl shadow-emerald-600/30 transition-all cursor-pointer"
+                                onClick={handleAgregar}
+                                disabled={agotado}
+                                className="w-full sm:w-auto px-8 py-3.5 bg-emerald-600 hover:bg-emerald-500 active:scale-95 text-white font-bold rounded-xl text-sm shadow-xl shadow-emerald-600/30 transition-all cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
                             >
-                                Añadir al Carrito
+                                {agotado ? 'Agotado' : agregado ? '✓ Agregado' : 'Añadir al Carrito'}
                             </button>
-                          
+
                         </div>
                         <div>
- <div className="p-6 bg-slate-950 border border-slate-800 rounded-2xl flex flex-col sm:flex-row items-center justify-between gap-4 mt-6">
- <span className="text-xs text-slate-400 block font-medium">Medidas</span>
-<span className="text-1xl font-black text-white"> Ancho {(producto.dimensions.width)}</span>
-<span className="text-1xl font-black text-white"> Altura {(producto.dimensions.height)}</span>
-<span className="text-1xl font-black text-white"> Profundidad {(producto.dimensions.depth)}</span>
- </div>
+                            <div className="p-6 bg-slate-950 border border-slate-800 rounded-2xl flex flex-col sm:flex-row items-center justify-between gap-4 mt-6">
+                                <span className="text-xs text-slate-400 block font-medium">Medidas</span>
+                                <span className="text-1xl font-black text-white"> Ancho {(producto.dimensions.width)}</span>
+                                <span className="text-1xl font-black text-white"> Altura {(producto.dimensions.height)}</span>
+                                <span className="text-1xl font-black text-white"> Profundidad {(producto.dimensions.depth)}</span>
+                            </div>
 
                         </div>
-<div>
-    {/* Título o etiqueta de la sección */}
-    <h2 className="text-xl font-bold text-white mb-4">Reviews</h2>
+                        <div>
+                            {/* Título o etiqueta de la sección */}
+                            <h2 className="text-xl font-bold text-white mb-4">Reviews</h2>
 
-    {/* Verificamos y mapeamos el arreglo reviews del producto */}
-    {producto.reviews && producto.reviews.map((review, index) => (
-        <div key={index} className="bg-slate-800 p-4 rounded-xl mb-3 border border-slate-700">
-            <div className="flex justify-between items-center mb-1">
-                <span className="text-white font-semibold text-sm">{review.reviewerName}</span>
-                <span className="text-amber-400 text-xs font-bold">★ {review.rating}</span>
-            </div>
-            
-            <p className="text-slate-300 text-sm">{review.comment}</p>
-            
-            <span className="text-slate-500 text-[10px] block mt-2">
-                {new Date(review.date).toLocaleDateString()}
-            </span>
-        </div>
-    ))}
-</div>
+                            {/* Verificamos y mapeamos el arreglo reviews del producto */}
+                            {producto.reviews && producto.reviews.map((review, index) => (
+                                <div key={index} className="bg-slate-800 p-4 rounded-xl mb-3 border border-slate-700">
+                                    <div className="flex justify-between items-center mb-1">
+                                        <span className="text-white font-semibold text-sm">{review.reviewerName}</span>
+                                        <span className="text-amber-400 text-xs font-bold">★ {review.rating}</span>
+                                    </div>
+
+                                    <p className="text-slate-300 text-sm">{review.comment}</p>
+
+                                    <span className="text-slate-500 text-[10px] block mt-2">
+                                        {new Date(review.date).toLocaleDateString()}
+                                    </span>
+                                </div>
+                            ))}
+                        </div>
 
                     </div>
 

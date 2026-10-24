@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { NavLink, Link } from 'react-router-dom';
 import FiltroCategorias from './FiltroCategorias';
+import { useCarrito } from '../context/CarritoContext';
 
 const Header = () => {
   // Estado local para abrir/cerrar el dropdown de categorías
@@ -18,13 +19,16 @@ const Header = () => {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
+    // El contador reactivo que viene del contexto global
+  const { totalArticulos } = useCarrito();
+
   return (
-    <header className="bg-slate-900 border-b border-slate-800 sticky top-0 z-40 shadow-xl backdrop-blur-md bg-slate-900/90">
+    <header className="bg-slate-900 border-b border-slate-800 sticky top-0 z-40 shadow-xl backdrop-blur-md ">
       <div className="max-w-7xl mx-auto px-4 sm:px-6">
         <div className="flex items-center justify-between h-16 gap-4">
           
           {/* Logotipo */}
-          <Link to="/" className="flex items-center gap-2 text-white no-underline group flex-shrink-0">
+          <Link to="/" className="flex items-center gap-2 text-white no-underline group shrink-0">
             <span className="text-2xl group-hover:scale-110 transition-transform">🛍️</span>
             <span className="text-base sm:text-lg font-black tracking-tight group-hover:text-emerald-400 transition-colors">
               Dummy<span className="text-emerald-400">JSON</span> Pro
@@ -81,6 +85,23 @@ const Header = () => {
                 </div>
               )}
             </div>
+            
+          <div>
+  {/* Carrito con badge reactivo */}
+          <Link
+            to="/carrito"
+            className="relative p-2 text-slate-300 hover:text-white bg-slate-800 hover:bg-slate-700 rounded-xl transition-all flex items-center justify-center no-underline"
+            title="Ver carrito de compras"
+          >
+            <span className="text-xl">🛒</span>
+            {totalArticulos > 0 && (
+              <span className="absolute -top-1.5 -right-1.5 bg-emerald-500 text-white text-[11px] font-black rounded-full h-5 min-w-5 px-1 flex items-center justify-center shadow-md">
+                {totalArticulos > 99 ? '99+' : totalArticulos}
+              </span>
+            )}
+          </Link>
+          </div>
+
           </nav>
 
         </div>
